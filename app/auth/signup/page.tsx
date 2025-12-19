@@ -62,7 +62,7 @@ export default function Signup() {
 
         try {
             // Changed: Use the Next.js API route for signup instead of directly calling the backend
-            const response = await fetch(`${process.env.API_BASE_URL || 'https://ats-software-backend.vercel.app'}/api/auth/signup`, {
+            const response = await fetch(`${process.env.API_BASE_URL || 'https://cms-organization-rust.vercel.app'}/api/auth/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
