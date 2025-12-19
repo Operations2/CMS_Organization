@@ -30,7 +30,7 @@ export default function Login() {
     try {
       const response = await fetch(
         `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+          process.env.NEXT_PUBLIC_API_URL || "HTTPS://api.csshouse4ssl.com"
         }/api/auth/login`,
         {
           method: "POST",
@@ -55,7 +55,7 @@ export default function Login() {
         setCookie("token", data.token, {
           maxAge: 60 * 60 * 24 * 7, // 7 days
           secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
-          sameSite: "strict", // CSRF protection
+          sameSite: "lax", // CSRF protection
           path: "/", // Available across the site
         });
       } else {
