@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 export async function GET(request: NextRequest) {
     try {
         // Get the token from cookies
-        const cookieStore = await cookies();
+        const cookieStore = cookies();
         const token = cookieStore.get('token')?.value;
 
         if (!token) {
@@ -16,7 +16,13 @@ export async function GET(request: NextRequest) {
         }
 
         // Make a request to your backend API
-        const apiUrl = process.env.API_BASE_URL || 'http://localhost:8080';
+        const apiUrl = process.env.API_BASE_URL;
+        if (!apiUrl) {
+          return NextResponse.json(
+            { success: false, message: "API_BASE_URL is not set" },
+            { status: 500 }
+          );
+        }
         const response = await fetch(`${apiUrl}/api/jobs`, {
             method: 'GET',
             headers: {
