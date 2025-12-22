@@ -80,7 +80,7 @@ export default function Login() {
       const target = redirectUrl
         ? decodeURIComponent(redirectUrl)
         : "/home";
-
+      alert("LOGIN SUCCESS — redirecting now");
       router.replace(target);
       router.refresh();
     } catch (err: any) {
