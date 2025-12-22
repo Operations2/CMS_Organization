@@ -1,25 +1,23 @@
 "use client";
+
 import Image from "next/image";
-import { useState, FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { setCookie } from "cookies-next";
 
 export default function Login() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Reset error
     setError("");
 
-    // Validate form inputs
     if (!email || !password) {
       setError("Email and password are required");
       return;
@@ -28,83 +26,65 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || "HTTPS://api.csshouse4ssl.com"
-        }/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid credentials");
+      const api = process.env.NEXT_PUBLIC_API_URL;
+      if (!api) {
+        throw new Error("NEXT_PUBLIC_API_URL is not set in Vercel env vars");
       }
 
-      // Store user data in cookies with secure options
-      if (data.token) {
-        setCookie("token", data.token, {
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-          secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
-          sameSite: "lax", // CSRF protection
-          path: "/", // Available across the site
-        });
-      } else {
+      const response = await fetch(`${api}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Invalid email or password");
+      }
+
+      if (!data?.token) {
         throw new Error("No authentication token received from server");
       }
 
-      // Log the user data from the API response for debugging
-      console.log("API Response User Data:", data.user);
-      console.log(
-        "Token received:",
-        data.token ? data.token.substring(0, 20) + "..." : "No token received"
-      );
+      // Store token cookie
+      setCookie("token", data.token, {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
 
-      // Ensure all fields are properly captured
+      // Store user cookie (use role; your DB schema uses `role`)
       const userData = {
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        userType:
-          data.user.userType ||
-          data.user.user_type ||
-          data.user.role ||
-          "undefined",
+        id: data?.user?.id,
+        name: data?.user?.name,
+        email: data?.user?.email,
+        role: data?.user?.role,
+        is_admin: data?.user?.is_admin,
       };
-      // Log what we're storing in the cookie
-      console.log("Storing in cookie:", userData);
 
       setCookie("user", JSON.stringify(userData), {
         maxAge: 60 * 60 * 24 * 7, // 7 days
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "lax",
         path: "/",
       });
 
-      // Get redirect URL from query params or default to home page
+      // Redirect: use ?redirect= if present, else go home
       const redirectUrl =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("redirect")
           : null;
 
-      // Redirect to the original URL or home page
-      if (redirectUrl) {
-        const decodedUrl = decodeURIComponent(redirectUrl);
-        router.push(decodedUrl);
-      } else {
-        router.push("/home");
-      }
-    } catch (error: any) {
-      setError(error.message || "Login failed. Please check your credentials.");
+      const target = redirectUrl
+        ? decodeURIComponent(redirectUrl)
+        : "/home";
+
+      router.replace(target);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -195,14 +175,7 @@ export default function Login() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <rect
-                    x="3"
-                    y="11"
-                    width="18"
-                    height="11"
-                    rx="2"
-                    ry="2"
-                  ></rect>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </div>
@@ -295,16 +268,6 @@ export default function Login() {
                 Forgot Password?
               </a>
             </div>
-
-            {/* Sign up link */}
-            {/* <div className="text-center mt-4">
-                            <p className="text-sm text-gray-600">
-                                Don't have an account?{" "}
-                                <Link href="/auth/signup" className="text-blue-500 hover:underline">
-                                    Sign Up
-                                </Link>
-                            </p>
-                        </div> */}
           </form>
         </div>
       </div>
