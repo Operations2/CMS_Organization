@@ -427,14 +427,22 @@ export default function OrganizationList() {
     columnsCatalog.find((c) => c.key === key);
 
   const getColumnValue = (org: any, key: string) => {
-    if (key.startsWith("custom:")) {
-      const rawKey = key.replace("custom:", "");
-      const cf = org?.customFields || org?.custom_fields || {};
-      const val = cf?.[rawKey];
-      return val === undefined || val === null || val === ""
-        ? "N/A"
-        : String(val);
-    }
+   if (key.startsWith("custom:")) {
+  const rawKey = key.replace("custom:", "");
+
+  // 1) Try Field_# direct property (source-style)
+  const direct = (org as any)?.[rawKey];
+  if (direct !== undefined && direct !== null && direct !== "") return String(direct);
+
+  // 2) Fallback: try label-keyed custom_fields object
+  const cf = org?.customFields || org?.custom_fields || {};
+  const val = (cf as any)?.[rawKey];
+
+  return val === undefined || val === null || val === ""
+    ? "N/A"
+    : String(val);
+}
+
 
     switch (key) {
       case "name":
