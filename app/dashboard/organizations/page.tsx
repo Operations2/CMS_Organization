@@ -427,41 +427,42 @@ export default function OrganizationList() {
     columnsCatalog.find((c) => c.key === key);
 
   const getColumnValue = (org: any, key: string) => {
-   if (key.startsWith("custom:")) {
-  const rawKey = key.replace("custom:", "");
 
-  // 1) Try Field_# direct property (source-style)
-  const direct = (org as any)?.[rawKey];
-  if (direct !== undefined && direct !== null && direct !== "") return String(direct);
+  // custom:label (legacy / fallback)
+  if (key.startsWith("custom:")) {
+    const rawKey = key.replace("custom:", "");
 
-  // 2) Fallback: try label-keyed custom_fields object
-  const cf = org?.customFields || org?.custom_fields || {};
-  const val = (cf as any)?.[rawKey];
+    // 1) Try Field_# direct property (source-style)
+    const direct = (org as any)?.[rawKey];
+    if (direct !== undefined && direct !== null && direct !== "")
+      return String(direct);
 
-  return val === undefined || val === null || val === ""
-    ? "N/A"
-    : String(val);
-}
+    // 2) Fallback: label-keyed custom_fields
+    const cf = org?.customFields || org?.custom_fields || {};
+    const val = (cf as any)?.[rawKey];
 
+    return val === undefined || val === null || val === ""
+      ? "N/A"
+      : String(val);
+  }
 
-    switch (key) {
-      case "name":
-        return org.name || "N/A";
-      case "status":
-        return org.status || "N/A";
-      case "contact_phone":
-        return org.contact_phone || "N/A";
-      case "address":
-        return org.address || "N/A";
-      case "job_orders_count":
-        return org.job_orders_count || 0;
-      case "placements_count":
-        return org.placements_count || 0;
-      default:
-        return "N/A";
-    }
-  };
+  // Field_# columns
+  if (/^Field_\d+$/.test(key)) {
+    const val = (org as any)?.[key];
+    return val === undefined || val === null || val === ""
+      ? "N/A"
+      : String(val);
+  }
 
+  switch (key) {
+    case "name":
+      return org.name || "N/A";
+    case "status":
+      return org.status || "N/A";
+    default:
+      return "N/A";
+  }
+};
   // Fetch organizations on component mount
   useEffect(() => {
     fetchOrganizations();
